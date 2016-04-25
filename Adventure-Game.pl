@@ -110,22 +110,50 @@ hint:-
 % Initial facts describing the world.  Rooms and doors do not change,
 % so they are compiled.
 
-room(office).
-room(kitchen).
-room('dining room').
-room(hall).
-room(cellar).
+place(union).
+place(frey).
+place(fishbowl).
+place('construction site').
+place('d lot').
+place('entrance to campus').
+place(boyer).
+place('dr. rohrbaughs office').
+place('naugle lobby').
+place('starry athletic field').
+place('high center').
+place('engle center').
+place('back forty').
+place(lottie).
+place(sewers).
 
-door(office,hall).
-door(hall,'dining room').
-door('dining room',kitchen).
-door(kitchen,cellar).
-door(kitchen,office).
+path(union, 'naugle lobby').
+path(union, fishbowl).
+path(union, 'engle center').
+path(union, frey).
+path(union, 'construction site').
+path(frey, 'engle center').
+path(frey, boyer).
+path(frey, 'rohrbaughs office').
+path(fishbowl, 'd lot').
+path(fishbowl, 'entrance to campus').
+path(fishbowl, 'naugle lobby').
+path('construction site', 'entrance to campus').
+path('construction site', lottie).
+path('d lot', 'entrance to campus').
+path('d lot', 'back forty').
+path(boyer, lottie).
+path(boyer, 'high center').
+path(boyer, 'starry athletic field').
+path('rohrbaughs office', sewers).
+path('starry athletic field', 'high center').
+path('starry athletic field', 'back forty').
+path('high center', lottie).
+path('back forty', sewers).
 
 connect(X,Y):-
-  door(X,Y).
+  path(X,Y).
 connect(X,Y):-
-  door(Y,X).
+  path(Y,X).
 
 % These facts are all subject to change during the game, so rather
 % than being compiled, they are "asserted" to the listener at
@@ -140,7 +168,7 @@ init_dynamic_facts:-
   assertz(location(table,kitchen)),
   assertz(location(crackers,desk)),
   assertz(location(broccoli,kitchen)),
-  assertz(here(kitchen)),
+  assertz(here('entrance to campus')),
   assertz(turned_off(flashlight)),
   dynamic(have/1),
   dynamic(turned_on/1).
@@ -158,31 +186,31 @@ tastes_yuchy(broccoli).
 
 % goto moves the player from room to room.
 
-goto(Room):-
-  can_go(Room),                 % check for legal move
-  puzzle(goto(Room)),           % check for special conditions
-  moveto(Room),                 % go there and tell the player
+goto(Place):-
+  can_go(Place),                 % check for legal move
+  puzzle(goto(Place)),           % check for special conditions
+  moveto(Place),                 % go there and tell the player
   look.
 goto(_):- look.
 
-can_go(Room):-                  % if there is a connection it 
+can_go(Place):-                  % if there is a connection it 
   here(Here),                   % is a legal move.
-  connect(Here,Room),!.
-can_go(Room):-
-  respond(['You can''t get to ',Room,' from here']),fail.
+  connect(Here,Place),!.
+can_go(Place):-
+  respond(['You can''t get to ',Place,' from here']),fail.
 
-moveto(Room):-                  % update the logicbase with the
+moveto(Place):-                  % update the logicbase with the
   retract(here(_)),             % new room
-  asserta(here(Room)).
+  asserta(here(Place)).
 
 % look lists the things in a room, and the connections
 
 look:-
   here(Here),
-  respond(['You are in the ',Here]),
+  respond(['You are at ',Here]),
   write('You can see the following things:'),nl,
   list_things(Here),
-  write('You can go to the following rooms:'),nl,
+  write('You can go to the following places:'),nl,
   list_connections(Here).
 
 list_things(Place):-
@@ -412,8 +440,17 @@ det --> [a].
 % special cases for those things represented in Nani Search by two
 % words.  We can't expect the user to type the name in quotes.
 
-noun(go_place,R) --> [R], {room(R)}.
-noun(go_place,'dining room') --> [dining,room].
+noun(go_place,R) --> [R], {place(R)}.
+noun(go_place,'construction site') --> [construction,site].
+noun(go_place,'d lot') --> [d,lot].
+noun(go_place,'entrance to campus') --> [entrance,to,campus].
+noun(go_place,'rohrbaughs office') --> [rohrbaughs,office].
+noun(go_place,'naugle lobby') --> [naugle, lobby].
+noun(go_place,'starry field') --> [starry,field].
+noun(go_place,'high center') --> [high,center].
+noun(go_place,'engle center') --> [engle,center].
+noun(go_place,'back forty') --> [back,forty].
+noun(go_place,'starry athletic field') --> [starry,athletic,field].
 
 noun(thing,T) --> [T], {location(T,_)}.
 noun(thing,T) --> [T], {have(T)}.
@@ -426,7 +463,7 @@ noun(thing,'dirty clothes') --> [dirty,clothes].
 % player has the flash light, assume it means the flash light.  Otherwise
 % assume it is the room light.
 
-noun(thing,light) --> [X,light], {room(X)}.
+noun(thing,light) --> [X,light], {place(X)}.
 noun(thing,flashlight) --> [light], {have(flashlight)}.
 noun(thing,light) --> [light].
 
