@@ -160,27 +160,47 @@ connect(X,Y):-
 % run time.  This predicate is called when "nanisrch" starts up.
 
 init_dynamic_facts:-
-  assertz(location(desk,office)),
-  assertz(location(apple,kitchen)),
-  assertz(location(flashlight,desk)),
-  assertz(location('washing machine',cellar)),
-  assertz(location(nani,'washing machine')),
-  assertz(location(table,kitchen)),
-  assertz(location(crackers,desk)),
-  assertz(location(broccoli,kitchen)),
+  assertz(location(milkshake,union)),
+  assertz(location('drumpf hat',sewers)),
+  assertz(location('Phillippy Quiz',frey)),
+  assertz(location('Brady Miller','back forty')),
+  assertz(location('Dr. Rohrbaugh Desk','dr. rohrbaughs office')),
+  assertz(location('Back Hoe','construction site')),
+  assertz(location('Small Loan of a Million Dollars','entrance to campus')),
+  assertz(location('Dr. Rohrbaugh','dr. rohrbaughs office')),
+  assertz(location('Construction Worker','construction site')),
+  assertz(location('Backhoe Worker','Back Hoe')),
+  assertz(location('Dr. Phillippy',frey)),
+  assertz(location('Ping-Pong Players',fishbowl)),
+  assertz(location('Hobo','d lot')),
+  assertz(location('Dr. Miller',boyer)),
+  assertz(location('Lobby Josh','naugle lobby')),
+  %assertz(have('Small Loan of a Million Dollars')).
+  %assertz(have('Voter Sheet')).
   assertz(here('entrance to campus')),
   assertz(turned_off(flashlight)),
   dynamic(have/1),
   dynamic(turned_on/1).
 
-furniture(desk).
-furniture('washing machine').
-furniture(table).
+puzzleItem(milkshake).
+puzzleItem('drumpf hat').
+puzzleItem('Phillippy Quiz').
+puzzleItem('Brady Miller').
 
-edible(apple).
-edible(crackers).
+lookableObject('Dr. Rohrbaugh Desk').
+lookableObject('Back Hoe').
 
-tastes_yuchy(broccoli).
+starting('Small Loan of a Million Dollars').
+starting('Voter Sheet').
+
+character('Dr. Rohrbaugh').
+character('Construction Worker').
+character('Backhoe Worker').
+character('Dr. Phillippy').
+character('Ping-Pong Players').
+character('Hobo').
+character('Dr. Miller').
+character('Lobby Josh').
 
 %%%%%%%% COMMANDS %%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -260,7 +280,7 @@ contains(Thing,Here):-
   contains(X,Here).
 
 is_takable(Thing):-                % you can't take the furniture
-  furniture(Thing),
+  lookableObject(Thing),
   respond(['You can''t pick up a ',Thing]),
   !,fail.
 is_takable(_).                     % not furniture, ok to take
