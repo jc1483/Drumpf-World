@@ -17,20 +17,20 @@ drumpf_world:-
   write('of a million dollars and a voter sheet on which to'),nl,
   write('record your votes. Your mission is to collect'),nl,
   write('the votes of your peers in an effort to win the'),nl,
-  write('election. You must collect all *INSERT NUM* votes to win'),nl,
+  write('election. You must collect all *INSERT NUM* votes to win.'),nl,
   nl,
   write('You control the game by using simple English commands'),nl,
   write('expressing the action you wish to take.  You can go to'),nl,
-  write('other rooms, look at your surroundings, look in things'),nl,
+  write('other locations, look at your surroundings, look in things'),nl,
   write('take things, drop things, eat things, inventory the'),nl,
-  write('things you have, and turn things on and off.'),nl,
+  write('things you have, and talk to people and give items to people.'),nl,
   nl,
   write('Hit any key to continue.'),get0(_),
   write('Type "help" if you need more help on mechanics.'),nl,
   write('Type "hint" if you want a big hint.'),nl,
   write('Type "quit" if you give up.'),nl,
   nl,
-  write('Enjoy the hunt.'),nl,
+  write('Go get those voters!'),nl,
 
   look,                   % give a look before starting the game
   command_loop.
@@ -96,6 +96,8 @@ nshelp:-
   write('   turn something on     (ex. turn on the light)'),nl,
   write('   inventory your things (ex. inventory)'),nl,
   write('   talk to someone		  (ex. talk to dr phillippy'),nl,
+  write('   give to the person in the same room'),nl,
+  write('		  (ex. give apple)'),nl,
   nl,
   write('The examples are verbose, terser commands and synonyms'),nl,
   write('are usually accepted.'),nl,nl,
@@ -275,6 +277,7 @@ dialog(Character):-
 	Character = 'dr rohrbaugh',
 	location('drumpf hat', 'dr rohrbaugh'),
 	asserta(has_vote('dr rohrbaugh')),
+	asserta(location('dr rohrbaugh''s vote', 'voter sheet')),
 	respond(['His head is now less cold! He gives you his vote']).
 dialog(Character):-
 	Character = 'dr rohrbaugh',
