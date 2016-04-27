@@ -14,7 +14,8 @@ drumpf_world:-
   write('You are a young pseudo-politician who is running'),nl,
   write('for class president of Messiah College in 2016.'),nl,
   write('You have nothing in your pocket but a small loan'),nl,
-  write('of a million dollars. Your mission is to collect'),nl,
+  write('of a million dollars and a voter sheet on which to'),nl,
+  write('record your votes. Your mission is to collect'),nl,
   write('the votes of your peers in an effort to win the'),nl,
   write('election. You must collect all *INSERT NUM* votes to win'),nl,
   nl,
@@ -57,10 +58,11 @@ do(hint):-hint,!.
 do(inventory):-inventory,!.
 do(take(X)):-take(X),!.
 do(drop(X)):-drop(X),!.
+do(give(X)):-give(X),!.
+do(talk(X)):-talk(X),!.
 do(eat(X)):-eat(X),!.
 do(look):-look,!.
-do(turn_on(X)):-turn_on(X),!.
-do(turn_off(X)):-turn_off(X),!.
+do(talk(X)):-talk(X),!.
 do(look_in(X)):-look_in(X),!.
 do(quit):-quit,!.
 
@@ -93,6 +95,7 @@ nshelp:-
   write('   eat something         (ex. eat the apple)'),nl,
   write('   turn something on     (ex. turn on the light)'),nl,
   write('   inventory your things (ex. inventory)'),nl,
+  write('   talk to someone		  (ex. talk to dr phillippy'),nl,
   nl,
   write('The examples are verbose, terser commands and synonyms'),nl,
   write('are usually accepted.'),nl,nl,
@@ -117,7 +120,7 @@ place('construction site').
 place('d lot').
 place('entrance to campus').
 place(boyer).
-place('dr. rohrbaughs office').
+place('dr rohrbaughs office').
 place('naugle lobby').
 place('starry athletic field').
 place('high center').
@@ -162,45 +165,42 @@ connect(X,Y):-
 init_dynamic_facts:-
   assertz(location(milkshake,union)),
   assertz(location('drumpf hat',sewers)),
-  assertz(location('Phillippy Quiz',frey)),
-  assertz(location('Brady Miller','back forty')),
-  assertz(location('Dr. Rohrbaugh Desk','dr. rohrbaughs office')),
-  assertz(location('Back Hoe','construction site')),
-  assertz(location('Small Loan of a Million Dollars','entrance to campus')),
-  assertz(location('Dr. Rohrbaugh','dr. rohrbaughs office')),
-  assertz(location('Construction Worker','construction site')),
-  assertz(location('Backhoe Worker','Back Hoe')),
-  assertz(location('Dr. Phillippy',frey)),
-  assertz(location('Ping-Pong Players',fishbowl)),
-  assertz(location('Hobo','d lot')),
-  assertz(location('Dr. Miller',boyer)),
-  assertz(location('Lobby Josh','naugle lobby')),
-  %assertz(have('Small Loan of a Million Dollars')).
-  %assertz(have('Voter Sheet')).
+  assertz(location('phillippy quiz','dr phillippy')),
+  assertz(location('brady miller','back forty')),
+  assertz(location('dr rohrbaugh desk','dr rohrbaughs office')),
+  assertz(location('back hoe','construction site')),
+  assertz(location('dr rohrbaugh','rohrbaughs office')),
+  assertz(location('construction worker','construction site')),
+  assertz(location('backhoe worker','back hoe')),
+  assertz(location('dr phillippy',frey)),
+  assertz(location('ping-pong players',fishbowl)),
+  assertz(location('hobo','d lot')),
+  assertz(location('dr miller',boyer)),
+  assertz(location('lobby josh','naugle lobby')),
+  assertz(have('small loan of a million dollars')),
+  assertz(have('voter sheet')),
   assertz(here('entrance to campus')),
-  assertz(turned_off(flashlight)),
-  dynamic(have/1),
-  dynamic(turned_on/1).
+  assertz(josh_count(1)),
+  dynamic(has_vote/1).
 
 puzzleItem(milkshake).
-puzzleItem('drumpf hat').
-puzzleItem('Phillippy Quiz').
-puzzleItem('Brady Miller').
+puzzleItem('phillippy Quiz').
+puzzleItem('brady Miller').
 
-lookableObject('Dr. Rohrbaugh Desk').
-lookableObject('Back Hoe').
+lookableObject('dr rohrbaugh desk').
+lookableObject('back hoe').
 
-starting('Small Loan of a Million Dollars').
-starting('Voter Sheet').
+starting('small loan of a million dollars').
+starting('voter sheet').
 
-character('Dr. Rohrbaugh').
-character('Construction Worker').
-character('Backhoe Worker').
-character('Dr. Phillippy').
-character('Ping-Pong Players').
-character('Hobo').
-character('Dr. Miller').
-character('Lobby Josh').
+character('dr rohrbaugh').
+character('construction worker').
+character('backhoe worker').
+character('dr phillippy').
+character('ping-pong players').
+character('hobo').
+character('dr miller').
+character('lobby josh').
 
 %%%%%%%% COMMANDS %%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -254,6 +254,46 @@ look_in(Thing):-
   list_things(Thing).
 look_in(Thing):-
   respond(['There is nothing in the ',Thing]).
+  
+% talk allows the player to talk to other characters
+
+talk(Character):-
+	is_present(Character),
+	dialog(Character).
+talk(Character):-
+	is_present(Character),
+	respond(['Their speech is incoherent. They should speak more english','']).
+talk(Character):-
+	respond(['That person is not here','']).
+	
+% dialog allows different characters to respond in different ways
+
+dialog(Character):-
+	has_vote(Character),
+	respond(['You already have his vote! Why would you want to talk to him?']).
+dialog(Character):-
+	Character = 'dr rohrbaugh',
+	location('drumpf hat', 'dr rohrbaugh'),
+	asserta(has_vote('dr rohrbaugh')),
+	respond(['His head is now less cold! He gives you his vote']).
+dialog(Character):-
+	Character = 'dr rohrbaugh',
+	respond(['He mutters something about his head being cold']).
+dialog(Character):-
+	Character = 'lobby josh',
+	josh_count(Num),
+	Num = 3,
+	retract(location('lobby josh','naugle lobby')),
+	respond(['He became very annoyed and left']).
+dialog(Character):-
+	Character = 'lobby josh',
+	josh_count(Num),
+	NewNum is Num + 1,
+	retract(josh_count(Num)),
+	asserta(josh_count(NewNum)),
+	respond(['He does not want to hear what you have to say']).
+
+
 
 % take allows the player to take something.  As long as the thing is
 % contained in the room it can be taken, even if the adventurer hasn't
@@ -272,6 +312,10 @@ is_here(Thing):-
 is_here(Thing):-
   respond(['There is no ',Thing,' here']),
   fail.
+  
+is_present(Person):-
+	here(Here),
+	contains(Person,Here).
 
 contains(Thing,Here):-             % recursive definition to find
   location(Thing,Here).            % things contained in things etc.
@@ -295,10 +339,24 @@ drop(Thing):-
   have(Thing),                     % you must have the thing to drop it
   here(Here),                      % where are we
   retract(have(Thing)),
-  asserta(location(Thing,Here)).
+  asserta(location(Thing,Here)),
+  respond(['You have dropped the ',Thing]).
 drop(Thing):-
   respond(['You don''t have the ',Thing]).
 
+% give - allows the player to give an item to the character in the room
+
+give(Thing):-
+	have(Thing),
+	is_present(Person),
+	retract(have(Thing)),
+	asserta(location(Thing,Person)),
+	respond(['You gave the ',Thing,' to ',Person]).	
+give(Thing):-
+	have(Thing),
+	respond(['Nobody is here']).
+give(Thing):-
+	respond(['You don''t have the ',Thing]).
 
 % eat, because every adventure game lets you eat stuff.
 
@@ -333,34 +391,6 @@ list_possessions:-
   fail.
 list_possessions.
 
-% turn_on recognizes two cases.  If the player tries to simply turn
-% on the light, it is assumed this is the room light, and the
-% appropriate error message is issued.  Otherwise turn_on has to
-% refer to an object which is turned_off.
-
-turn_on(light):-
-  respond(['You can''t reach the switch and there''s nothing to stand on']).
-turn_on(Thing):-
-  have(Thing),
-  turn_on2(Thing).
-turn_on(Thing):-
-  respond(['You don''t have the ',Thing]).
-
-turn_on2(Thing):-
-  turned_on(Thing),
-  respond([Thing,' is already on']).
-turn_on2(Thing):-
-  turned_off(Thing),
-  retract(turned_off(Thing)),
-  asserta(turned_on(Thing)),
-  respond([Thing,' turned on']).
-turn_on2(Thing):-
-  respond(['You can''t turn a ',Thing,' on']).
-
-% turn_off - I didn't feel like implementing turn_off
-
-turn_off(Thing):-
-  respond(['I lied about being able to turn things off']).
 
 % The only special puzzle in Nani Search has to do with going to the
 % cellar.  Puzzle is only called from goto for this reason.  Other
@@ -410,12 +440,14 @@ get_command(_):-
 command([Pred,Arg]) --> verb(Type,Pred),nounphrase(Type,Arg).
 command([Pred]) --> verb(intran,Pred).
 command([goto,Arg]) --> noun(go_place,Arg).
+command([talk,Arg]) --> noun(person,Arg).
 
 % Recognize three types of verbs.  Each verb corresponds to a command,
 % but there are many synonyms allowed.  For example the command
 % turn_on will be triggered by either "turn on" or "switch on".
 
 verb(go_place,goto) --> go_verb.
+verb(person,talk) --> talk_verb.
 verb(thing,V) --> tran_verb(V).
 verb(intran,V) --> intran_verb(V).
 
@@ -423,15 +455,16 @@ go_verb --> [go].
 go_verb --> [go,to].
 go_verb --> [g].
 
+talk_verb --> [talk].
+talk_verb --> [talk,to].
+
+tran_verb(give) --> [give].
 tran_verb(take) --> [take].
 tran_verb(take) --> [pick,up].
 tran_verb(drop) --> [drop].
 tran_verb(drop) --> [put].
 tran_verb(drop) --> [put,down].
 tran_verb(eat) --> [eat].
-tran_verb(turn_on) --> [turn,on].
-tran_verb(turn_on) --> [switch,on].
-tran_verb(turn_off) --> [turn,off].
 tran_verb(look_in) --> [look,in].
 tran_verb(look_in) --> [look].
 tran_verb(look_in) --> [open].
@@ -474,9 +507,15 @@ noun(go_place,'starry athletic field') --> [starry,athletic,field].
 
 noun(thing,T) --> [T], {location(T,_)}.
 noun(thing,T) --> [T], {have(T)}.
-noun(thing,flashlight) --> [flash,light].
-noun(thing,'washing machine') --> [washing,machine].
-noun(thing,'dirty clothes') --> [dirty,clothes].
+noun(thing,'small loan of a million dollars') --> [small,loan,of,a,million,dollars].
+noun(thing,'voter sheet') --> [voter,sheet].
+noun(thing,'back hoe') --> [back,hoe].
+noun(thing,'dr rohrbaughs desk') --> [dr,rohrbaughs,desk].
+noun(thing,'drumpf hat') --> [drumpf,hat].
+
+noun(person,P) --> [P], {character(P)}.
+noun(person,'dr rohrbaugh') --> [dr,rohrbaugh].
+noun(person,'lobby josh') --> [lobby,josh].
 
 % If the player has just typed light, it can be interpreted three ways.
 % If a room name is before it, it must be a room light.  If the
