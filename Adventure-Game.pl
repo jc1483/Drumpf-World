@@ -291,6 +291,15 @@ dialog(Character):-
 dialog(Character):-
 	Character = 'lobby josh',
 	josh_count(Num),
+	Num = 1,
+	NewNum is Num + 1,
+	retract(josh_count(Num)),
+	asserta(josh_count(NewNum)),
+	respond(['He does not want to hear what you have to say, but you''re Ronald Drumpf!']),
+	respond(['You''ve got words... You''ve got the best words! Keep trying.']).
+dialog(Character):-
+	Character = 'lobby josh',
+	josh_count(Num),
 	NewNum is Num + 1,
 	retract(josh_count(Num)),
 	asserta(josh_count(NewNum)),
@@ -460,6 +469,11 @@ go_verb --> [g].
 
 talk_verb --> [talk].
 talk_verb --> [talk,to].
+talk_verb --> [hi].
+talk_verb --> [go,up,to].
+talk_verb --> [say,hello,to].
+talk_verb --> [greet].
+talk_verb --> [hello].
 
 tran_verb(give) --> [give].
 tran_verb(take) --> [take].
@@ -469,6 +483,7 @@ tran_verb(drop) --> [put].
 tran_verb(drop) --> [put,down].
 tran_verb(eat) --> [eat].
 tran_verb(look_in) --> [look,in].
+tram_verb(look_in) --> [look,at].
 tran_verb(look_in) --> [look].
 tran_verb(look_in) --> [open].
 
