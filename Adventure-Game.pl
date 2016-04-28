@@ -67,6 +67,7 @@ do(talk(X)):-talk(X),!.
 do(solve(X)):-solve(X),!.
 do(make_speech):-make_speech,!.
 do(look_in(X)):-look_in(X),!.
+do(get_In(X)):-get_In(X),!.
 do(quit):-quit,!.
 
 % These are the predicates which control exit from the game.  If
@@ -181,7 +182,15 @@ init_dynamic_facts:-
   assertz(location('hobo','d lot')),
   assertz(location('dr miller',boyer)),
   assertz(location('lobby josh','naugle lobby')),
+  assertz(location('p safety officer','entrance to campus')),
   assertz(location(yard,union)),
+  assertz(location('white car','d lot')),
+  assertz(location('red car','d lot')),
+  assertz(location('blue car','d lot')),
+  assertz(location('silver car','d lot')),
+  assertz(location('lots of other cars','d lot')),
+  assertz(location('man behind cars','red car')),
+  assertz(location('jake and julie','union')),
   assertz(have('small loan of a million dollars')),
   assertz(have('voter sheet')),
   assertz(here('entrance to campus')),
@@ -189,6 +198,7 @@ init_dynamic_facts:-
   assertz(construction_count(0)),
   assertz(phillippy_count(0)),
   assertz(ping_count(0)),
+  assertz(car_count(0)),
   assertz(speech_made(0)),
   dynamic(quiz_solved),
   dynamic(has_vote/1).
@@ -200,6 +210,13 @@ lookableObject(yard).
 lookableObject('back hoe').
 lookableObject('milkshake machine').
 
+driveableObject('back hoe').
+driveableObject('white car').
+driveableObject('red car').
+driveableObject('blue car').
+driveableObject('silver car').
+driveableObject('lots of other cars').
+
 character('dr rohrbaugh').
 character('construction worker').
 character('dr phillippy').
@@ -207,6 +224,9 @@ character('ping pong players').
 character('hobo').
 character('dr miller').
 character('lobby josh').
+character('man behind cars').
+character('p safety officer').
+character('jake and julie').
 
 %%%%%%%% COMMANDS %%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -272,14 +292,37 @@ look_in(Thing):-
   
 % talk allows the player to talk to other characters
 
+talk('brady miller'):-
+	have('brady miller'),
+	respond(['You can''t see his face while carrying him, ',
+	'but you hear muffled sobbing']).		
+talk('brady miller'):-
+	is_here('brady miller'),
+	location('brady miller','dr miller'),
+	respond(['He still looks so sad']).
+talk('brady miller'):-
+	is_here('brady miller'),
+	respond(['He looks at you with sadness in his eyes. ',
+		'You know he doesn''t want to go with you, but you''ve ',
+		'got votes to win. You decide you should pick him up']).
 talk(Character):-
 	is_present(Character),
 	dialog(Character).
 talk(Character):-
 	is_present(Character),
-	respond(['Their speech is incoherent. They should speak more english','']).
+	respond(['Their speech is incoherent. They should speak more english']).
 talk(Character):-
-	respond(['That person is not here','']).
+	character(Character),
+	respond(['That person is not here']).
+talk(Thing):-
+	have(Thing),
+	respond(['You hold it up to your face and whisper to it. ',
+		'It makes no sudden movements... Or any movements... ',
+		'Maybe it''s scared?']).
+talk(_):-
+	respond(['It doesn''t respond. Well... That means it''s either ',
+		'deaf or it doesn''t like you... Probably because it''s a ',
+		'lightweight loser']).
 	
 % dialog allows different characters to respond in different ways
 
@@ -353,7 +396,7 @@ dialog(Character):-
 	Character = 'dr phillippy',
 	phillippy_count(1),
 	location('phillippy quiz', 'dr phillippy'),
-	move('phillippy quiz'),
+	move('phillippy quiz',have),
 	respond(['Drumpf, this doesn''t look anywhere near close to done. ',
 		'I''ll give it back to you and you can try again']).
 dialog(Character):-
@@ -368,6 +411,81 @@ dialog(Character):-
 	retract(phillippy_count(0)),
 	asserta(phillippy_count(1)),
 	respond(['Hi, Drumpf. Would you mind finishing this quiz for me? Thanks']).
+dialog(Character):-
+	Character = 'man behind cars',
+	car_count(0),
+	retract(car_count(0)),
+	asserta(car_count(1)),
+	retract(location('man behind cars','red car')),
+	asserta(location('man behind cars','white car')),
+	respond(['Please don''t report me to P-Safety! ',
+		'(He runs and hides)']).
+dialog(Character):-
+	Character = 'man behind cars',
+	car_count(1),
+	retract(car_count(1)),
+	asserta(car_count(2)),
+	retract(location('man behind cars','white car')),
+	asserta(location('man behind cars','blue car')),
+	respond(['Please don''t report me to P-Safety! ',
+		'(He runs and hides again)']).
+dialog(Character):-
+	Character = 'man behind cars',
+	car_count(2),
+	retract(car_count(2)),
+	asserta(car_count(3)),
+	retract(location('man behind cars','blue car')),
+	asserta(location('man behind cars','red car')),
+	respond(['C''mon man! Stop following me! ',
+		'(He runs and hides again)']).
+dialog(Character):-
+	Character = 'man behind cars',
+	car_count(3),
+	retract(car_count(3)),
+	asserta(car_count(4)),
+	retract(location('man behind cars','red car')),
+	asserta(location('man behind cars','silver car')),
+	respond(['I''m serious, man! Stop it! ',
+		'(He runs and hides again)']).
+dialog(Character):-
+	Character = 'man behind cars',
+	car_count(4),
+	retract(location('man behind cars',_)),
+	asserta(has_vote('man behind cars')),
+	asserta(location('man behind cars''s vote','voter sheet')),
+	respond(['Alright, I''ll vote for you! Just leave me alone!']).
+dialog(Character):-
+	Character = 'p safety officer',
+	car_count(X),
+	X =\= 0,
+	asserta(has_vote('p safety officer')),
+	asserta(location('p safety officer''s vote','voter sheet')),
+	respond(['(You tell him about the man behind the cars in d lot) ',
+		'Alright, Drumpf! Thanks for letting me know. Anyone who is ',
+		'as conscientious and responsible as you must be a good candidate! ',
+		'You have my vote']).
+dialog(Character):-
+	Character = 'p safety officer',
+	car_count(0),
+	respond(['Let me know if you see anything suspicious on campus!']).
+dialog(Character):-
+	Character = 'dr miller',
+	location('brady miller','dr miller'),
+	asserta(has_vote('dr miller')),
+	asserta(location('dr miller''s vote','voter sheet')),
+	respond(['You''ve returned my son to me! Thank you so much! ',
+		'You have my vote, Drumpf']).
+dialog(Character):-
+	Character = 'dr miller',
+	have('brady miller'),
+	respond(['I see you have my son with you. Maybe you could give ',
+		'him back to me?']).
+dialog(Character):-
+	Character = 'dr miller',
+	respond(['I''ve been looking all over for my son! Have you seen him?']).
+dialog(Character):-
+	Character = 'jake and julie',
+	respond(['No! You must not associate with the competition!']).
 
 
 % take allows the player to take something.  As long as the thing is
@@ -375,6 +493,14 @@ dialog(Character):-
 % looked in the the container which contains it.  Also the thing
 % must not be furniture.
 
+take('brady miller'):-
+	is_here('brady miller'),
+	move('brady miller',have),
+	respond(['Somehow you manage to pick him up']).
+take(Thing):-
+	driveableObject(Thing),
+	respond(['What, you''re just going to take it out for a spin?',
+		' I don''t think so. It''s locked anyway']).
 take(Thing):-
   is_here(Thing),
   is_takable(Thing),
@@ -387,8 +513,9 @@ is_here(Thing):-
 is_here(Thing):-
   respond(['There is no ',Thing,' here']),
   fail.
-  
+
 is_present(Person):-
+	character(Person),
 	here(Here),
 	contains(Person,Here).
 
@@ -400,7 +527,8 @@ contains(Thing,Here):-
 
 is_takable(Thing):-                % you can't take things too big
   lookableObject(Thing),
-  respond(['One does not simply take a ',Thing]),
+  respond(['That ',Thing, ' is yuuuuuugggeee!',
+  	' There''s no way you could take it']),
   !,fail.
 is_takable(Person):-			   % can't take people either
   character(Person),
@@ -450,6 +578,9 @@ eat2(Thing):-
   retract(have(Thing)),
   respond(['That ',Thing,' was great. It was so great.',
 	' I mean it was just incredible. It was the greatest ',Thing]).
+eat2(Person):-
+	character(Person),
+	respond(['I don''t think they''d appreciate that.']).
 eat2(Thing):-
   respond(['You can''t eat a ',Thing]).
   
@@ -480,6 +611,18 @@ make(_):-
 	write('and there''s no one around to pay for it. '),nl,
 	write('It''s certainly not coming out of your pocket!'),nl.
 
+% get_in - you can't get into a car.. you're too big for anything else
+
+get_In(Thing):-
+	driveableObject(Thing),
+	respond(['What? You''re just going to take it out for a spin?',
+		' I don''t think so. It''s locked anyway']).
+get_In(Person):-
+	character(Person),
+	respond(['I don''t think we''re allowed to implement that..']).
+get_In(Thing):-
+	respond(['I think you''re too big to fit in a ',Thing]).
+
 % solve the quiz (make something up)
 
 solve('phillippy quiz'):-
@@ -487,13 +630,13 @@ solve('phillippy quiz'):-
 	asserta(have('finished phillippy quiz')),
 	asserta(location('even worse gibberish','finished phillippy quiz')),
 	respond(['You make something up and write it down']).
-solve(Thing):-
+solve(_):-
 	respond(['What''s there to solve?']).
 
 % inventory list your possesions
 
 inventory:-
-  have(X),                         % make sure you have at least one thing
+  have(_),                         % make sure you have at least one thing
   write('You have: '),nl,
   list_possessions.
 inventory:-
@@ -562,30 +705,37 @@ get_command(_):-
 command([Pred,Arg]) --> verb(Type,Pred),nounphrase(Type,Arg).
 command([Pred]) --> verb(intran,Pred).
 command([goto,Arg]) --> noun(go_place,Arg).
-command([talk,Arg]) --> noun(person,Arg).
 
 % Recognize three types of verbs.  Each verb corresponds to a command,
 % but there are many synonyms allowed.  For example the command
 % turn_on will be triggered by either "turn on" or "switch on".
 
 verb(go_place,goto) --> go_verb.
-verb(person,talk) --> talk_verb.
+verb(person,V) --> tran_verb(V).
 verb(thing,V) --> tran_verb(V).
 verb(intran,V) --> intran_verb(V).
 
 go_verb --> [go].
 go_verb --> [go,to].
+go_verb --> [go,into].
+go_verb --> [walk,to].
+go_verb --> [run,to].
 go_verb --> [g].
 
-talk_verb --> [talk].
-talk_verb --> [talk,to].
-talk_verb --> [hi].
-talk_verb --> [go,up,to].
-talk_verb --> [say,hello,to].
-talk_verb --> [greet].
-talk_verb --> [hello].
-talk_verb --> [say,hi,to].
-
+tran_verb(talk) --> [talk].
+tran_verb(talk) --> [talk,to].
+tran_verb(talk) --> [hi].
+tran_verb(talk) --> [go,up,to].
+tran_verb(talk) --> [say,hello,to].
+tran_verb(talk) --> [greet].
+tran_verb(talk) --> [hello].
+tran_verb(talk) --> [say,hi,to].
+tran_verb(get_In) --> [get,in].
+tran_verb(get_In) --> [get,inside].
+tran_verb(get_In) --> [get,into].
+tran_verb(get_In) --> [jump,in].
+tran_verb(get_In) --> [jump,into].
+tran_verb(get_In) --> [drive].
 tran_verb(make) --> [make].
 tran_verb(solve) --> [solve].
 tran_verb(solve) --> [finish].
@@ -597,7 +747,7 @@ tran_verb(drop) --> [put].
 tran_verb(drop) --> [put,down].
 tran_verb(eat) --> [eat].
 tran_verb(look_in) --> [look,in].
-tram_verb(look_in) --> [look,at].
+tran_verb(look_in) --> [look,at].
 tran_verb(look_in) --> [look].
 tran_verb(look_in) --> [open].
 
@@ -652,15 +802,23 @@ noun(thing,'milkshake') --> [milkshake].
 noun(thing,'milkshake ingredients') --> [milkshake,ingredients].
 noun(thing,'phillippy quiz') --> [phillippy,quiz].
 noun(thing,'finished phillippy quiz') --> [finished,phillippy,quiz].
+noun(thing,'brady miller') --> [brady,miller].
+noun(thing,'white car') --> [white,car].
+noun(thing,'red car') --> [red,car].
+noun(thing,'blue car') --> [blue,car].
+noun(thing,'silver car') --> [silver,car].
+noun(thing,'lots of other cars') --> [lots,of,other,cars].
 
 noun(person,P) --> [P], {character(P)}.
 noun(person,'dr rohrbaugh') --> [dr,rohrbaugh].
 noun(person,'lobby josh') --> [lobby,josh].
 noun(person,'construction worker') --> [construction,worker].
-noun(person,'backhoe worker') --> [backhoe,worker].
 noun(person,'dr phillippy') --> [dr,phillippy].
 noun(person,'ping pong players') --> [ping,pong,players].
 noun(person,'dr miller') --> [dr,miller].
+noun(person,'p safety officer') --> [p,safety,officer].
+noun(person,'man behind cars') --> [man,behind,cars].
+noun(person,'jake and julie') --> [jake,and,julie].
 
 % If the player has just typed light, it can be interpreted three ways.
 % If a room name is before it, it must be a room light.  If the
@@ -702,7 +860,7 @@ readword(C,W,C2) :-         % otherwise if character does not
   get0(C1),                 % accumulating them until 
   restword(C1,Cs,C2),       % we have all the word     
   name(W, [NewC|Cs]).       % then make it an atom
-readword(C,W,C2) :-         % otherwise
+readword(_,W,C2) :-         % otherwise
   get0(C1),       
   readword(C1,W,C2).        % start a new word
 
