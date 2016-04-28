@@ -59,10 +59,13 @@ do(inventory):-inventory,!.
 do(take(X)):-take(X),!.
 do(drop(X)):-drop(X),!.
 do(give(X)):-give(X),!.
+do(make(X)):-make(X),!.
 do(talk(X)):-talk(X),!.
 do(eat(X)):-eat(X),!.
 do(look):-look,!.
 do(talk(X)):-talk(X),!.
+do(solve(X)):-solve(X),!.
+do(make_speech):-make_speech,!.
 do(look_in(X)):-look_in(X),!.
 do(quit):-quit,!.
 
@@ -165,41 +168,42 @@ connect(X,Y):-
 % run time.  This predicate is called when "nanisrch" starts up.
 
 init_dynamic_facts:-
-  assertz(location(milkshake,union)),
+  assertz(location('milkshake machine',union)),
+  assertz(location('milkshake ingredients','milkshake machine')),
   assertz(location('drumpf hat',sewers)),
-  assertz(location('phillippy quiz','dr phillippy')),
   assertz(location('brady miller','back forty')),
   assertz(location('dr rohrbaugh desk','dr rohrbaughs office')),
   assertz(location('back hoe','construction site')),
   assertz(location('dr rohrbaugh','rohrbaughs office')),
   assertz(location('construction worker','construction site')),
-  assertz(location('backhoe worker','back hoe')),
   assertz(location('dr phillippy',frey)),
-  assertz(location('ping-pong players',fishbowl)),
+  assertz(location('ping pong players',fishbowl)),
   assertz(location('hobo','d lot')),
   assertz(location('dr miller',boyer)),
   assertz(location('lobby josh','naugle lobby')),
+  assertz(location(yard,union)),
   assertz(have('small loan of a million dollars')),
   assertz(have('voter sheet')),
   assertz(here('entrance to campus')),
   assertz(josh_count(1)),
+  assertz(construction_count(0)),
+  assertz(phillippy_count(0)),
+  assertz(ping_count(0)),
+  assertz(speech_made(0)),
+  dynamic(quiz_solved),
   dynamic(has_vote/1).
 
-puzzleItem(milkshake).
-puzzleItem('phillippy Quiz').
-puzzleItem('brady Miller').
+edible(milkshake).
 
-lookableObject('dr rohrbaugh desk').
+lookableObject('dr rohrbaughs desk').
+lookableObject(yard).
 lookableObject('back hoe').
-
-starting('small loan of a million dollars').
-starting('voter sheet').
+lookableObject('milkshake machine').
 
 character('dr rohrbaugh').
 character('construction worker').
-character('backhoe worker').
 character('dr phillippy').
-character('ping-pong players').
+character('ping pong players').
 character('hobo').
 character('dr miller').
 character('lobby josh').
@@ -235,6 +239,12 @@ look:-
   write('You can go to the following places:'),nl,
   list_connections(Here).
 
+list_things(yard):-
+	have(milkshake),nl,
+	tab(2),write('Somehow, all the boys have been brought'),nl,
+	tab(2),write('to the yard. You didn'' have anything to do'),nl,
+	tab(2),write('with this did you?'),nl,
+	fail.
 list_things(Place):-
   location(X,Place),
   tab(2),write(X),nl,
@@ -254,6 +264,9 @@ look_in(Thing):-
   location(_,Thing),               % make sure there's at least one
   write('The '),write(Thing),write(' contains:'),nl,
   list_things(Thing).
+look_in(yard):-
+	have(milkshake),
+	list_things(yard).
 look_in(Thing):-
   respond(['There is nothing in the ',Thing]).
   
@@ -304,7 +317,57 @@ dialog(Character):-
 	retract(josh_count(Num)),
 	asserta(josh_count(NewNum)),
 	respond(['He does not want to hear what you have to say']).
-
+dialog(Character):-
+	Character = 'construction worker',
+	construction_count(1),
+	asserta(has_vote('construction worker')),
+	asserta(location('construction worker''s vote','voter sheet')),
+	respond(['You threatened to sue him. He scrawls his signature ',
+		'on the voter sheet and shrinks away in fear. You''re glad ',
+		'someone finally recognizes the sincerity of your threats']).
+dialog(Character):-
+	Character = 'construction worker',
+	retract(construction_count(0)),
+	asserta(construction_count(1)),
+	respond(['Please sir! Don''t sue me! (talk again to threaten a law suit)']).
+dialog(Character):-
+	Character = 'ping pong players',
+	ping_count(1),
+	asserta(has_vote('ping pong players')),
+	asserta(location('ping pong players'' votes','voter sheet')),
+	respond(['Alright, man. Just make sure we get those paddles!']).
+dialog(Character):-
+	Character = 'ping pong players',
+	retract(ping_count(0)),
+	asserta(ping_count(1)),
+	respond(['Hey, Drumpf. We''ll vote for you if you promise us better ',
+		'ping pong paddles! (talk again to promise something that''s not ',
+		'going to happen and you know it)']).
+dialog(Character):-
+	Character = 'dr phillippy',
+	location('finished phillippy quiz', 'dr phillippy'),
+	asserta(has_vote('dr phillippy')),
+	asserta(location('dr phillippy''s vote', 'voter sheet')),
+	respond(['Wow, this looks great! Thanks, Drumpf. You have my vote']).
+dialog(Character):-
+	Character = 'dr phillippy',
+	phillippy_count(1),
+	location('phillippy quiz', 'dr phillippy'),
+	move('phillippy quiz'),
+	respond(['Drumpf, this doesn''t look anywhere near close to done. ',
+		'I''ll give it back to you and you can try again']).
+dialog(Character):-
+	Character = 'dr phillippy',
+	phillippy_count(1),
+	have('phillippy quiz'),
+	respond(['Get that quiz back to me as soon as possible']).
+dialog(Character):-
+	Character = 'dr phillippy',
+	asserta(have('phillippy quiz')),
+	asserta(location('gibberish','phillippy quiz')),
+	retract(phillippy_count(0)),
+	asserta(phillippy_count(1)),
+	respond(['Hi, Drumpf. Would you mind finishing this quiz for me? Thanks']).
 
 
 % take allows the player to take something.  As long as the thing is
@@ -335,11 +398,15 @@ contains(Thing,Here):-
   location(Thing,X),
   contains(X,Here).
 
-is_takable(Thing):-                % you can't take the furniture
+is_takable(Thing):-                % you can't take things too big
   lookableObject(Thing),
-  respond(['You can''t pick up a ',Thing]),
+  respond(['One does not simply take a ',Thing]),
   !,fail.
-is_takable(_).                     % not furniture, ok to take
+is_takable(Person):-			   % can't take people either
+  character(Person),
+  respond(['You can''t take a person. Maybe you can deport them']),
+  !,fail.
+is_takable(_).                     % not too big or person, ok to take
 
 move(Thing,have):-
   retract(location(Thing,_)),      % take it from its old place
@@ -381,12 +448,47 @@ eat(Thing):-
 eat2(Thing):-
   edible(Thing),
   retract(have(Thing)),
-  respond(['That ',Thing,' was good']).
-eat2(Thing):-
-  tastes_yuchy(Thing),
-  respond(['Three year olds don''t eat ',Thing]).
+  respond(['That ',Thing,' was great. It was so great.',
+	' I mean it was just incredible. It was the greatest ',Thing]).
 eat2(Thing):-
   respond(['You can''t eat a ',Thing]).
+  
+% make - use this to make milkshakes in the game!
+
+make(milkshake):-
+	here(union),
+	have('milkshake ingredients'),
+	asserta(have(milkshake)),
+	respond(['Congrats! You now have a milkshake. ',
+	'You hear faint pop music in the background']).
+make(milkshake):-
+	here(union),
+	respond(['You don''t have the required ingredients.']).
+make(milkshake):-
+	respond(['How are you supposed to do that?']).
+make(_):-
+	here(Here),
+	location(Character,Here),
+	character(Character),
+	tab(2),write('That might cost a lot of money.'),nl,
+	tab(2),write('You could try to make '),
+	write(Character),
+	write(' pay for it, '),nl,
+	tab(2),write('but that probably won''t work.'),nl.
+make(_):-
+	write('That might cost a lot of money, '),nl,
+	write('and there''s no one around to pay for it. '),nl,
+	write('It''s certainly not coming out of your pocket!'),nl.
+
+% solve the quiz (make something up)
+
+solve('phillippy quiz'):-
+	retract(have('phillippy quiz')),
+	asserta(have('finished phillippy quiz')),
+	asserta(location('even worse gibberish','finished phillippy quiz')),
+	respond(['You make something up and write it down']).
+solve(Thing):-
+	respond(['What''s there to solve?']).
 
 % inventory list your possesions
 
@@ -403,6 +505,14 @@ list_possessions:-
   fail.
 list_possessions.
 
+% The final speech is the last step of the game.
+
+make_speech:-
+	here(union),
+	full_voter_sheet(1),
+	make_speech2.
+make_speech2:-
+	respond(['some words']).
 
 % The only special puzzle in Nani Search has to do with going to the
 % cellar.  Puzzle is only called from goto for this reason.  Other
@@ -474,7 +584,11 @@ talk_verb --> [go,up,to].
 talk_verb --> [say,hello,to].
 talk_verb --> [greet].
 talk_verb --> [hello].
+talk_verb --> [say,hi,to].
 
+tran_verb(make) --> [make].
+tran_verb(solve) --> [solve].
+tran_verb(solve) --> [finish].
 tran_verb(give) --> [give].
 tran_verb(take) --> [take].
 tran_verb(take) --> [pick,up].
@@ -487,6 +601,9 @@ tram_verb(look_in) --> [look,at].
 tran_verb(look_in) --> [look].
 tran_verb(look_in) --> [open].
 
+intran_verb(make_speech) --> [make,speech].
+intran_verb(make_speech) --> [give,speech].
+intran_verb(make_speech) --> [speech].
 intran_verb(inventory) --> [inventory].
 intran_verb(inventory) --> [i].
 intran_verb(look) --> [look].
@@ -530,10 +647,20 @@ noun(thing,'voter sheet') --> [voter,sheet].
 noun(thing,'back hoe') --> [back,hoe].
 noun(thing,'dr rohrbaughs desk') --> [dr,rohrbaughs,desk].
 noun(thing,'drumpf hat') --> [drumpf,hat].
+noun(thing,'milkshake machine') --> [milkshake,machine].
+noun(thing,'milkshake') --> [milkshake].
+noun(thing,'milkshake ingredients') --> [milkshake,ingredients].
+noun(thing,'phillippy quiz') --> [phillippy,quiz].
+noun(thing,'finished phillippy quiz') --> [finished,phillippy,quiz].
 
 noun(person,P) --> [P], {character(P)}.
 noun(person,'dr rohrbaugh') --> [dr,rohrbaugh].
 noun(person,'lobby josh') --> [lobby,josh].
+noun(person,'construction worker') --> [construction,worker].
+noun(person,'backhoe worker') --> [backhoe,worker].
+noun(person,'dr phillippy') --> [dr,phillippy].
+noun(person,'ping pong players') --> [ping,pong,players].
+noun(person,'dr miller') --> [dr,miller].
 
 % If the player has just typed light, it can be interpreted three ways.
 % If a room name is before it, it must be a room light.  If the
