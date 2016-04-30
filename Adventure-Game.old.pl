@@ -81,9 +81,9 @@ nanifound:-
   write('Now you can rest secure.'),nl,nl.
 
 quit:-
-  write('Giving up? A man who sells his own brand of steaks'),nl,
-  write('would never give up!'),nl,
-  nl.
+  write('Giving up?  It''s going to be a scary night'),nl,
+  write('and when you get the Nani it''s not going'),nl,
+  write('to smell right.'),nl,nl.
 
 % The help command
 
@@ -110,8 +110,10 @@ nshelp:-
   look.
 
 hint:-
-  write('You are Ronald Drumpf You don''t need any hints!'),nl,
-  nl,
+  write('You need to get to the cellar, and you can''t unless'),nl,
+  write('you get some light.  You can''t turn on the cellar'),nl,
+  write('light, but there is a flash light in the desk in the'),nl,
+  write('office you might use.'),nl,nl,
   look.
 
 % Initial facts describing the world.  Rooms and doors do not change,
@@ -189,9 +191,6 @@ init_dynamic_facts:-
   assertz(location('lots of other cars','d lot')),
   assertz(location('man behind cars','red car')),
   assertz(location('jake and julie','union')),
-  assertz(location(athlete,'starry athletic field')),
-  assertz(location('construction plans','back hoe')),
-  assertz(location('Step 1: Take as long as possible to finish construction. Step 2: Profit.','construction plans')),
   assertz(have('small loan of a million dollars')),
   assertz(have('voter sheet')),
   assertz(here('entrance to campus')),
@@ -228,7 +227,6 @@ character('lobby josh').
 character('man behind cars').
 character('p safety officer').
 character('jake and julie').
-character('athlete').
 
 %%%%%%%% COMMANDS %%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -488,16 +486,6 @@ dialog(Character):-
 dialog(Character):-
 	Character = 'jake and julie',
 	respond(['No! You must not associate with the competition!']).
-dialog(Character):-
-	Character = 'athlete',
-	location('small loan of a million dollars', 'athlete'),
-	asserta(has_vote('athlete')),
-	asserta(location('athlete''s vote', 'voter sheet')),
-	respond(['Oh, ok this will be just enough for me to vote for you.']),
-	respond(['(You are pleased to have made such a smart business decision)']).
-dialog(Character):-
-	Character = 'athlete',
-	respond(['It would take, like, a million dollars for me to vote for you! Hahahaha']).	
 
 
 % take allows the player to take something.  As long as the thing is
@@ -761,9 +749,6 @@ tran_verb(eat) --> [eat].
 tran_verb(look_in) --> [look,in].
 tran_verb(look_in) --> [look,at].
 tran_verb(look_in) --> [look].
-tran_verb(look_in) --> [check].
-tran_verb(look_in) --> [review].
-tran_verb(look_in) --> [read].
 tran_verb(look_in) --> [open].
 
 intran_verb(make_speech) --> [make,speech].
@@ -823,7 +808,6 @@ noun(thing,'red car') --> [red,car].
 noun(thing,'blue car') --> [blue,car].
 noun(thing,'silver car') --> [silver,car].
 noun(thing,'lots of other cars') --> [lots,of,other,cars].
-noun(thing,'construction plans') --> [construction,plans].
 
 noun(person,P) --> [P], {character(P)}.
 noun(person,'dr rohrbaugh') --> [dr,rohrbaugh].
@@ -835,7 +819,6 @@ noun(person,'dr miller') --> [dr,miller].
 noun(person,'p safety officer') --> [p,safety,officer].
 noun(person,'man behind cars') --> [man,behind,cars].
 noun(person,'jake and julie') --> [jake,and,julie].
-noun(person,'athlete') --> [athlete].
 
 % If the player has just typed light, it can be interpreted three ways.
 % If a room name is before it, it must be a room light.  If the
