@@ -17,7 +17,7 @@ drumpf_world:-
   write('of a million dollars and a voter sheet on which to'),nl,
   write('record your votes. Your mission is to collect'),nl,
   write('the votes of your peers in an effort to win the'),nl,
-  write('election. You must collect all *INSERT NUM* votes to win.'),nl,
+  write('election. You must collect all 11 votes to win.'),nl,
   nl,
   write('You control the game by using simple English commands'),nl,
   write('expressing the action you wish to take.  You can go to'),nl,
@@ -42,7 +42,7 @@ command_loop:-
   repeat,
   get_command(X),
   do(X),
-  (havevotes; X == quit).
+  (havevotesccc; havevotes; X == quit).
 
 % do - matches the input command with the predicate which carries out
 %     the command.  More general approaches which might work in the
@@ -75,13 +75,30 @@ do(quit):-quit,!.
 % succeed and the command_loop will complete.  Otherwise it fails
 % and command_loop will repeat.
 
+havevotesccc:-
+  checked_votes(X),        
+  X =:= 11,
+  have('ccc book'),
+  location(milkshake,hobo),
+  write('Congratulations, you have all the votes.'),nl,
+  write('However, everyone lied about voting for you'),nl,
+  write('and you still lose the election. Sorry!'),nl,nl,
+  write('However, the words from the ccc book you found come back to you.'),nl,
+  write('''Messiah College is a community and that''s what makes us special.'''),nl,
+  write('You remember the warm feeling of giving a hobo a delicious milkshake.'),nl,
+  write('You wonder if maybe there is more to life than just winning?'),nl,
+  write('Maybe, there''s still hope for old Drumpf yet!'),nl,nl,
+  write('You win!'),nl,nl,
+  write('Thanks for playing!'),nl.
+
 havevotes:-
   checked_votes(X),        
   X =:= 11,
   write('Congratulations, you have all the votes.'),nl,
   write('However, everyone lied about voting for you'),nl,
-  write('and you still lose the election. Sorry!'),nl,nl.
-
+  write('and you still lose the election. Sorry!'),nl,nl,
+  write('Thanks for playing!'),nl.
+  
 has_vote(Person):-
 	asserta(checked_vote(Person)),
 	checked_votes(X),
@@ -112,7 +129,7 @@ nshelp:-
   write('   give to the person in the same room'),nl,
   write('		  (ex. give apple)'),nl,
   write('   make something        (ex. make a milkshake)'),nl,
-  write('   solve something       (ex solve phillippy quiz)'),nl,
+  write('   solve something        (ex. solve phillippy quiz)'),nl,
   nl,
   write('The examples are verbose, terser commands and synonyms'),nl,
   write('are usually accepted.'),nl,nl,
@@ -135,7 +152,7 @@ place('construction site').
 place('d lot').
 place('entrance to campus').
 place(boyer).
-place('dr rohrbaughs office').
+place('rohrbaughs office').
 place('naugle lobby').
 place('starry athletic field').
 place('high center').
@@ -184,7 +201,9 @@ init_dynamic_facts:-
   assertz(location('milkshake ingredients','milkshake machine')),
   assertz(location('drumpf hat',sewers)),
   assertz(location('brady miller','back forty')),
-  assertz(location('dr rohrbaugh desk','dr rohrbaughs office')),
+  assertz(location('dr rohrbaugh''s desk','rohrbaughs office')),
+  assertz(location('ccc book','dr rohrbaugh''s desk')),
+  assertz(location('Messiah College is a community and that''s what makes us special.','ccc book')),
   assertz(location('back hoe','construction site')),
   assertz(location('dr rohrbaugh','rohrbaughs office')),
   assertz(location('construction worker','construction site')),
@@ -227,7 +246,7 @@ init_dynamic_facts:-
 edible(milkshake).
 edible('marginally ok food').
 
-lookableObject('dr rohrbaughs desk').
+lookableObject('dr rohrbaugh''s desk').
 lookableObject(yard).
 lookableObject('back hoe').
 lookableObject('milkshake machine').
@@ -260,7 +279,6 @@ character('someone sketchy').
 
 goto(Place):-
   can_go(Place),                 % check for legal move
-  puzzle(goto(Place)),           % check for special conditions
   moveto(Place),                 % go there and tell the player
   look.
 goto(_):- look.
@@ -601,7 +619,7 @@ dialog(Character):-
 
 take('marginally ok food'):-
 	asserta(have('marginally ok food')),
-	respond(['You know have the marginally ok food']).
+	respond(['You now have the marginally ok food']).
 take('brady miller'):-
 	is_here('brady miller'),
 	move('brady miller',have),
@@ -661,13 +679,20 @@ drop(Thing):-
   respond(['You don''t have the ',Thing]).
 
 % give - allows the player to give an item to the character in the room
-
+give('milkshake'):-
+	have('milkshake'),
+	is_present('hobo'),
+	retract(have('milkshake')),
+	asserta(location('milkshake','hobo')),
+	respond(['You gave the milkshake to the hobo.']),
+	respond(['He thanks you.']),
+	respond(['You feel an odd warm sensation inside.']).
 give(Thing):-
 	have(Thing),
 	is_present(Person),
 	retract(have(Thing)),
 	asserta(location(Thing,Person)),
-	respond(['You gave the ',Thing,' to ',Person]).	
+	respond(['You gave the ',Thing,' to ',Person]).
 give(Thing):-
 	have(Thing),
 	respond(['Nobody is here']).
@@ -769,19 +794,6 @@ make_speech:-
 	make_speech2.
 make_speech2:-
 	respond(['some words']).
-
-% The only special puzzle in Nani Search has to do with going to the
-% cellar.  Puzzle is only called from goto for this reason.  Other
-% puzzles pertaining to other commands could easily be added.
-
-puzzle(goto(cellar)):-
-  have(flashlight),
-  turned_on(flashlight),!.
-puzzle(goto(cellar)):-
-  write('You can''t go to the cellar because it''s dark in the'),nl,
-  write('cellar, and you''re afraid of the dark.'),nl,
-  !,fail.
-puzzle(_).
 
 % respond simplifies writing a mixture of literals and variables
  
@@ -896,29 +908,48 @@ det --> [a].
 
 noun(go_place,R) --> [R], {place(R)}.
 noun(go_place,'construction site') --> [construction,site].
+noun(go_place,'construction site') --> [construction].
+noun(go_place,'construction site') --> [site].
 noun(go_place,'d lot') --> [d,lot].
 noun(go_place,'entrance to campus') --> [entrance,to,campus].
+noun(go_place,'entrance to campus') --> [entrance].
 noun(go_place,'rohrbaughs office') --> [rohrbaughs,office].
+noun(go_place,'rohrbaughs office') --> [office].
 noun(go_place,'naugle lobby') --> [naugle, lobby].
-noun(go_place,'starry field') --> [starry,field].
+noun(go_place,'naugle lobby') --> [naugle].
+noun(go_place,'naugle lobby') --> [lobby].
 noun(go_place,'high center') --> [high,center].
 noun(go_place,'engle center') --> [engle,center].
 noun(go_place,'back forty') --> [back,forty].
 noun(go_place,'starry athletic field') --> [starry,athletic,field].
+noun(go_place,'starry athletic field') --> [starry,field].
+noun(go_place,'starry athletic field') --> [starry].
 
 noun(thing,T) --> [T], {location(T,_)}.
 noun(thing,T) --> [T], {have(T)}.
 noun(thing,'small loan of a million dollars') --> [small,loan,of,a,million,dollars].
+noun(thing,'small loan of a million dollars') --> [small,loan].
+noun(thing,'small loan of a million dollars') --> [loan].
+noun(thing,'small loan of a million dollars') --> [a,million,dollars].
+noun(thing,'small loan of a million dollars') --> [million,dollars].
+noun(thing,'small loan of a million dollars') --> [dollars].
 noun(thing,'voter sheet') --> [voter,sheet].
+noun(thing,'voter sheet') --> [sheet].
 noun(thing,'back hoe') --> [back,hoe].
-noun(thing,'dr rohrbaughs desk') --> [dr,rohrbaughs,desk].
+noun(thing,'dr rohrbaugh''s desk') --> [dr,rohrbaughs,desk].
+noun(thing,'dr rohrbaugh''s desk') --> [desk].
 noun(thing,'drumpf hat') --> [drumpf,hat].
+noun(thing,'drumpf hat') --> [hat].
 noun(thing,'milkshake machine') --> [milkshake,machine].
+noun(thing,'milkshake machine') --> [machine].
 noun(thing,'milkshake') --> [milkshake].
 noun(thing,'milkshake ingredients') --> [milkshake,ingredients].
+noun(thing,'milkshake ingredients') --> [ingredients].
 noun(thing,'phillippy quiz') --> [phillippy,quiz].
+noun(thing,'phillippy quiz') --> [quiz].
 noun(thing,'finished phillippy quiz') --> [finished,phillippy,quiz].
 noun(thing,'brady miller') --> [brady,miller].
+noun(thing,'brady miller') --> [brady].
 noun(thing,'white car') --> [white,car].
 noun(thing,'red car') --> [red,car].
 noun(thing,'blue car') --> [blue,car].
@@ -926,23 +957,41 @@ noun(thing,'silver car') --> [silver,car].
 noun(thing,'lots of other cars') --> [lots,of,other,cars].
 noun(thing,'construction plans') --> [construction,plans].
 noun(thing,'marginally ok food') --> [marginally,ok,food].
+noun(thing,'marginally ok food') --> [food].
+noun(thing,'construction plans') --> [construction,plans].
+noun(thing,'construction plans') --> [plans].
 noun(thing,'forged psychological health verification') --> [forged,psychological,health,verification].
+noun(thing,'forged psychological health verification') --> [health,verification].
+noun(thing,'forged psychological health verification') --> [verification].
+noun(thing,'ccc book') --> [ccc,book].
+noun(thing,'ccc book') --> [book].
 
 
 noun(person,P) --> [P], {character(P)}.
 noun(person,'dr rohrbaugh') --> [dr,rohrbaugh].
+noun(person,'dr rohrbaugh') --> [rohrbaugh].
 noun(person,'lobby josh') --> [lobby,josh].
+noun(person,'lobby josh') --> [josh].
 noun(person,'construction worker') --> [construction,worker].
+noun(person,'construction worker') --> [worker].
 noun(person,'dr phillippy') --> [dr,phillippy].
+noun(person,'dr phillippy') --> [phillippy].
 noun(person,'ping pong players') --> [ping,pong,players].
+noun(person,'ping pong players') --> [players].
 noun(person,'dr miller') --> [dr,miller].
+noun(person,'dr miller') --> [miller].
 noun(person,'p safety officer') --> [p,safety,officer].
+noun(person,'p safety officer') --> [officer].
 noun(person,'man behind cars') --> [man,behind,cars].
+noun(person,'man behind cars') --> [man].
 noun(person,'jake and julie') --> [jake,and,julie].
 noun(person,'athlete') --> [athlete].
 noun(person,'someone sketchy') --> [someone,sketchy].
+noun(person,'someone sketchy') --> [someone].
 noun(person,'campus nurse') --> [campus,nurse].
+noun(person,'campus nurse') --> [nurse].
 noun(person,'business student') --> [business,student].
+noun(person,'business student') --> [student].
 
 % readlist - read a list of words, based on a Clocksin & Mellish
 % example.
