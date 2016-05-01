@@ -81,9 +81,9 @@ havevotesccc:-
   have('ccc book'),
   location(milkshake,hobo),
   write('Congratulations, you have all the votes.'),nl,
-  write('However, everyone lied about voting for you'),nl,
+  write('Unfortunately, everyone lied about voting for you'),nl,
   write('and you still lose the election. Sorry!'),nl,nl,
-  write('However, the words from the ccc book you found come back to you.'),nl,
+  write('However, the words from the ccc book you found come back to you:'),nl,
   write('''Messiah College is a community and that''s what makes us special.'''),nl,
   write('You remember the warm feeling of giving a hobo a delicious milkshake.'),nl,
   write('You wonder if maybe there is more to life than just winning?'),nl,
@@ -125,15 +125,15 @@ nshelp:-
   write('   eat something         (ex. eat the apple)'),nl,
   write('   turn something on     (ex. turn on the light)'),nl,
   write('   inventory your things (ex. inventory)'),nl,
-  write('   talk to someone		  (ex. talk to dr phillippy'),nl,
+  write('   talk to someone       (ex. talk to dr phillippy'),nl,
   write('   give to the person in the same room'),nl,
-  write('		  (ex. give apple)'),nl,
+  write('		                 (ex. give apple)'),nl,
   write('   make something        (ex. make a milkshake)'),nl,
-  write('   solve something        (ex. solve phillippy quiz)'),nl,
+  write('   solve something       (ex. solve phillippy quiz)'),nl,
   nl,
   write('The examples are verbose, terser commands and synonyms'),nl,
   write('are usually accepted.'),nl,nl,
-  write('Hit any key to continue.'),nl,
+  write('Hit enter key to continue.'),nl,nl,
   get0(_),
   look.
 
@@ -152,7 +152,7 @@ place('construction site').
 place('d lot').
 place('entrance to campus').
 place(boyer).
-place('rohrbaughs office').
+place('rohrbaugh''s office').
 place('naugle lobby').
 place('starry athletic field').
 place('high center').
@@ -168,7 +168,7 @@ path(union, frey).
 path(union, 'construction site').
 path(frey, 'engle center').
 path(frey, boyer).
-path(frey, 'rohrbaughs office').
+path(frey, 'rohrbaugh''s office').
 path(frey, 'construction site').
 path(frey, 'lottie').
 path(fishbowl, 'd lot').
@@ -181,7 +181,7 @@ path('d lot', 'back forty').
 path(boyer, lottie).
 path(boyer, 'high center').
 path(boyer, 'starry athletic field').
-path('rohrbaughs office', sewers).
+path('rohrbaugh''s office', sewers).
 path('starry athletic field', 'high center').
 path('starry athletic field', 'back forty').
 path('high center', lottie).
@@ -201,11 +201,11 @@ init_dynamic_facts:-
   assertz(location('milkshake ingredients','milkshake machine')),
   assertz(location('drumpf hat',sewers)),
   assertz(location('brady miller','back forty')),
-  assertz(location('dr rohrbaugh''s desk','rohrbaughs office')),
+  assertz(location('dr rohrbaugh''s desk','rohrbaugh''s office')),
   assertz(location('ccc book','dr rohrbaugh''s desk')),
   assertz(location('Messiah College is a community and that''s what makes us special.','ccc book')),
   assertz(location('back hoe','construction site')),
-  assertz(location('dr rohrbaugh','rohrbaughs office')),
+  assertz(location('dr rohrbaugh','rohrbaugh''s office')),
   assertz(location('construction worker','construction site')),
   assertz(location('dr phillippy',frey)),
   assertz(location('ping pong players',fishbowl)),
@@ -238,7 +238,7 @@ init_dynamic_facts:-
   assertz(phillippy_count(0)),
   assertz(ping_count(0)),
   assertz(car_count(0)),
-  assertz(speech_made(0)),
+  assertz(student_count(0)),
   assertz(checked_votes(0)),
   dynamic(quiz_solved/1),
   dynamic(checked_vote/1).
@@ -460,7 +460,8 @@ dialog(Character):-
 	asserta(location('gibberish','phillippy quiz')),
 	retract(phillippy_count(0)),
 	asserta(phillippy_count(1)),
-	respond(['Hi, Drumpf. Would you mind finishing this quiz for me? Thanks']).
+	respond(['Hi, Drumpf. Would you mind finishing this quiz for me? Thanks']),
+	respond(['(You now have a phillippy quiz)']).
 dialog(Character):-
 	Character = 'man behind cars',
 	car_count(0),
@@ -564,12 +565,23 @@ dialog(Character):-
 		'making scheme ever! Thanks, Drumpf!']).
 dialog(Character):-
 	Character = 'business student',
+	student_count(1),
+	respond(['I''m still looking for propositions! (Not yours though. Yours are bad. ',
+		'Except for that one where you ','''self-funded''',' your campaign through a loan ',
+		'from your company, though. That was genius. You still took donations and could ',
+		'have the campaign repay the loan when it was over. So, it appears like your ',
+		'campaign is self-funded, but it actually was paying you! You really fooled ',
+		'some people with that one. Nice']).
+dialog(Character):-
+	Character = 'business student',
+	retract(student_count(0)),
+	asserta(student_count(1)),
 	respond(['I''m looking for new business propositions! If you can find me some way ',
 		'to make a lot of money without doing much work, I''ll vote for you! I hope ',
-		'you can find a way. People seem to think you know what you''re doing, but I''m not so sure ',
+		'you can find a way. People seem to think you know what you''re doing, but I''m not so sure. ',
 		'You''re legacy mostly consists of making lower than average business decisions ',
 		' but getting lucky in the long run, right? I mean, that time you started a mortgage ',
-		'company six months before the housing bubble collapse is a classic. Anyway, let me know ',
+		'company six months before the housing bubble collapse of 2008 is a classic. Anyway, let me know ',
 		'if you find any ideas! (By ideas, I mean someone else''s idea. Even as a college ',
 		'business major just starting out, I know enough to not trust yours.)']).
 dialog(Character):-
@@ -867,6 +879,7 @@ tran_verb(solve) --> [finish].
 tran_verb(give) --> [give].
 tran_verb(take) --> [take].
 tran_verb(take) --> [pick,up].
+tran_verb(take) --> [get].
 tran_verb(drop) --> [drop].
 tran_verb(drop) --> [put].
 tran_verb(drop) --> [put,down].
@@ -913,30 +926,37 @@ noun(go_place,'construction site') --> [site].
 noun(go_place,'d lot') --> [d,lot].
 noun(go_place,'entrance to campus') --> [entrance,to,campus].
 noun(go_place,'entrance to campus') --> [entrance].
-noun(go_place,'rohrbaughs office') --> [rohrbaughs,office].
-noun(go_place,'rohrbaughs office') --> [office].
+noun(go_place,'rohrbaugh''s office') --> ['rohrbaugh''s',office].
+noun(go_place,'rohrbaugh''s office') --> [rohrbaughs,office].
+noun(go_place,'rohrbaugh''s office') --> [office].
 noun(go_place,'naugle lobby') --> [naugle, lobby].
 noun(go_place,'naugle lobby') --> [naugle].
 noun(go_place,'naugle lobby') --> [lobby].
 noun(go_place,'high center') --> [high,center].
+noun(go_place,'high center') --> [high].
 noun(go_place,'engle center') --> [engle,center].
+noun(go_place,'engle center') --> [engle].
 noun(go_place,'back forty') --> [back,forty].
 noun(go_place,'starry athletic field') --> [starry,athletic,field].
 noun(go_place,'starry athletic field') --> [starry,field].
 noun(go_place,'starry athletic field') --> [starry].
+noun(go_place,'starry athletic field') --> [field].
 
 noun(thing,T) --> [T], {location(T,_)}.
 noun(thing,T) --> [T], {have(T)}.
 noun(thing,'small loan of a million dollars') --> [small,loan,of,a,million,dollars].
 noun(thing,'small loan of a million dollars') --> [small,loan].
 noun(thing,'small loan of a million dollars') --> [loan].
-noun(thing,'small loan of a million dollars') --> [a,million,dollars].
 noun(thing,'small loan of a million dollars') --> [million,dollars].
 noun(thing,'small loan of a million dollars') --> [dollars].
+noun(thing,'small loan of a million dollars') --> [your,loan].
 noun(thing,'voter sheet') --> [voter,sheet].
 noun(thing,'voter sheet') --> [sheet].
+noun(thing,'voter sheet') --> [my,votes].
 noun(thing,'back hoe') --> [back,hoe].
+noun(thing,'back hoe') --> [hoe].
 noun(thing,'dr rohrbaugh''s desk') --> [dr,rohrbaughs,desk].
+noun(thing,'dr rohrbaugh''s desk') --> [dr,'rohrbaugh''s',desk].
 noun(thing,'dr rohrbaugh''s desk') --> [desk].
 noun(thing,'drumpf hat') --> [drumpf,hat].
 noun(thing,'drumpf hat') --> [hat].
@@ -948,6 +968,7 @@ noun(thing,'milkshake ingredients') --> [ingredients].
 noun(thing,'phillippy quiz') --> [phillippy,quiz].
 noun(thing,'phillippy quiz') --> [quiz].
 noun(thing,'finished phillippy quiz') --> [finished,phillippy,quiz].
+noun(thing,'finished phillippy quiz') --> [finished,quiz].
 noun(thing,'brady miller') --> [brady,miller].
 noun(thing,'brady miller') --> [brady].
 noun(thing,'white car') --> [white,car].
@@ -956,12 +977,19 @@ noun(thing,'blue car') --> [blue,car].
 noun(thing,'silver car') --> [silver,car].
 noun(thing,'lots of other cars') --> [lots,of,other,cars].
 noun(thing,'construction plans') --> [construction,plans].
-noun(thing,'marginally ok food') --> [marginally,ok,food].
-noun(thing,'marginally ok food') --> [food].
-noun(thing,'construction plans') --> [construction,plans].
 noun(thing,'construction plans') --> [plans].
+noun(thing,'marginally ok food') --> [marginally,ok,food].
+noun(thing,'marginally ok food') --> [marginally,okay,food].
+noun(thing,'marginally ok food') --> [marginally,okey,food].
+noun(thing,'marginally ok food') --> [ok,food].
+noun(thing,'marginally ok food') --> [okay,food].
+noun(thing,'marginally ok food') --> [okey,food].
+noun(thing,'marginally ok food') --> [food].
 noun(thing,'forged psychological health verification') --> [forged,psychological,health,verification].
+noun(thing,'forged psychological health verification') --> [psychological,health,verification].
+noun(thing,'forged psychological health verification') --> [forged,health,verification].
 noun(thing,'forged psychological health verification') --> [health,verification].
+noun(thing,'forged psychological health verification') --> [forged,verification].
 noun(thing,'forged psychological health verification') --> [verification].
 noun(thing,'ccc book') --> [ccc,book].
 noun(thing,'ccc book') --> [book].
@@ -981,10 +1009,16 @@ noun(person,'ping pong players') --> [players].
 noun(person,'dr miller') --> [dr,miller].
 noun(person,'dr miller') --> [miller].
 noun(person,'p safety officer') --> [p,safety,officer].
+noun(person,'p safety officer') --> [safety,officer].
+noun(person,'p safety officer') --> [p,safety].
 noun(person,'p safety officer') --> [officer].
 noun(person,'man behind cars') --> [man,behind,cars].
+noun(person,'man behind cars') --> [car,man].
+noun(person,'man behind cars') --> [hiding,man].
 noun(person,'man behind cars') --> [man].
 noun(person,'jake and julie') --> [jake,and,julie].
+noun(person,'jake and julie') --> [jake].
+noun(person,'jake and julie') --> [julie].
 noun(person,'athlete') --> [athlete].
 noun(person,'someone sketchy') --> [someone,sketchy].
 noun(person,'someone sketchy') --> [someone].
