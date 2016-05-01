@@ -112,6 +112,7 @@ nshelp:-
   write('   give to the person in the same room'),nl,
   write('		  (ex. give apple)'),nl,
   write('   make something        (ex. make a milkshake)'),nl,
+  write('   solve something       (ex solve phillippy quiz)'),nl,
   nl,
   write('The examples are verbose, terser commands and synonyms'),nl,
   write('are usually accepted.'),nl,nl,
