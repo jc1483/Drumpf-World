@@ -25,7 +25,7 @@ drumpf_world:-
   write('take things, drop things, eat things, inventory the'),nl,
   write('things you have, and talk to people and give items to people.'),nl,
   nl,
-  write('Hit any key to continue.'),get0(_),
+  write('Hit enter to continue.'),get0(_),nl,
   write('Type "help" if you need more help on mechanics.'),nl,
   write('Type "hint" if you want a big hint.'),nl,
   write('Type "quit" if you give up.'),nl,
@@ -42,7 +42,7 @@ command_loop:-
   repeat,
   get_command(X),
   do(X),
-  (nanifound; X == quit).
+  (havevotes; X == quit).
 
 % do - matches the input command with the predicate which carries out
 %     the command.  More general approaches which might work in the
@@ -75,10 +75,19 @@ do(quit):-quit,!.
 % succeed and the command_loop will complete.  Otherwise it fails
 % and command_loop will repeat.
 
-nanifound:-
-  have(nani),        
-  write('Congratulations, you saved the Nani.'),nl,
-  write('Now you can rest secure.'),nl,nl.
+havevotes:-
+  checked_votes(X),        
+  X =:= 11,
+  write('Congratulations, you have all the votes.'),nl,
+  write('However, everyone lied about voting for you'),nl,
+  write('and you still lose the election. Sorry!'),nl,nl.
+
+has_vote(Person):-
+	asserta(checked_vote(Person)),
+	checked_votes(X),
+	retract(checked_votes(X)),
+	NewX is X + 1,
+	asserta(checked_votes(NewX)),!.
 
 quit:-
   write('Giving up? A man who sells his own brand of steaks'),nl,
@@ -102,6 +111,7 @@ nshelp:-
   write('   talk to someone		  (ex. talk to dr phillippy'),nl,
   write('   give to the person in the same room'),nl,
   write('		  (ex. give apple)'),nl,
+  write('   make something        (ex. make a milkshake)'),nl,
   nl,
   write('The examples are verbose, terser commands and synonyms'),nl,
   write('are usually accepted.'),nl,nl,
@@ -141,6 +151,8 @@ path(union, 'construction site').
 path(frey, 'engle center').
 path(frey, boyer).
 path(frey, 'rohrbaughs office').
+path(frey, 'construction site').
+path(frey, 'lottie').
 path(fishbowl, 'd lot').
 path(fishbowl, 'entrance to campus').
 path(fishbowl, 'naugle lobby').
@@ -192,19 +204,27 @@ init_dynamic_facts:-
   assertz(location(athlete,'starry athletic field')),
   assertz(location('construction plans','back hoe')),
   assertz(location('Step 1: Take as long as possible to finish construction. Step 2: Profit.','construction plans')),
+  assertz(location('business student','high center')),
+  assertz(location('marginally ok food','lottie')),
+  assertz(location('campus nurse','engle center')),
+  assertz(location('someone sketchy','lottie')),
   assertz(have('small loan of a million dollars')),
   assertz(have('voter sheet')),
   assertz(here('entrance to campus')),
+  assertz(nurse_count(0)),
+  assertz(sketch_count(0)),
   assertz(josh_count(1)),
   assertz(construction_count(0)),
   assertz(phillippy_count(0)),
   assertz(ping_count(0)),
   assertz(car_count(0)),
   assertz(speech_made(0)),
-  dynamic(quiz_solved),
-  dynamic(has_vote/1).
+  assertz(checked_votes(0)),
+  dynamic(quiz_solved/1),
+  dynamic(checked_vote/1).
 
 edible(milkshake).
+edible('marginally ok food').
 
 lookableObject('dr rohrbaughs desk').
 lookableObject(yard).
@@ -229,6 +249,9 @@ character('man behind cars').
 character('p safety officer').
 character('jake and julie').
 character('athlete').
+character('business student').
+character('campus nurse').
+character('someone sketchy').
 
 %%%%%%%% COMMANDS %%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -329,12 +352,12 @@ talk(_):-
 % dialog allows different characters to respond in different ways
 
 dialog(Character):-
-	has_vote(Character),
+	checked_vote(Character),
 	respond(['You already have his vote! Why would you want to talk to him?']).
 dialog(Character):-
 	Character = 'dr rohrbaugh',
 	location('drumpf hat', 'dr rohrbaugh'),
-	asserta(has_vote('dr rohrbaugh')),
+	has_vote(Character),
 	asserta(location('dr rohrbaugh''s vote', 'voter sheet')),
 	respond(['His head is now less cold! He gives you his vote']).
 dialog(Character):-
@@ -365,7 +388,7 @@ dialog(Character):-
 dialog(Character):-
 	Character = 'construction worker',
 	construction_count(1),
-	asserta(has_vote('construction worker')),
+	has_vote('construction worker'),
 	asserta(location('construction worker''s vote','voter sheet')),
 	respond(['You threatened to sue him. He scrawls his signature ',
 		'on the voter sheet and shrinks away in fear. You''re glad ',
@@ -378,7 +401,7 @@ dialog(Character):-
 dialog(Character):-
 	Character = 'ping pong players',
 	ping_count(1),
-	asserta(has_vote('ping pong players')),
+	has_vote(Character),
 	asserta(location('ping pong players'' votes','voter sheet')),
 	respond(['Alright, man. Just make sure we get those paddles!']).
 dialog(Character):-
@@ -391,7 +414,7 @@ dialog(Character):-
 dialog(Character):-
 	Character = 'dr phillippy',
 	location('finished phillippy quiz', 'dr phillippy'),
-	asserta(has_vote('dr phillippy')),
+	has_vote(Character),
 	asserta(location('dr phillippy''s vote', 'voter sheet')),
 	respond(['Wow, this looks great! Thanks, Drumpf. You have my vote']).
 dialog(Character):-
@@ -403,11 +426,17 @@ dialog(Character):-
 		'I''ll give it back to you and you can try again']).
 dialog(Character):-
 	Character = 'dr phillippy',
+	have('finished phillippy quiz'),
+	respond(['It looks like that quiz is finished! Give it to me so I ',
+		'can make sure it''s correct']).
+dialog(Character):-
+	Character = 'dr phillippy',
 	phillippy_count(1),
 	have('phillippy quiz'),
 	respond(['Get that quiz back to me as soon as possible']).
 dialog(Character):-
 	Character = 'dr phillippy',
+	phillippy_count(0),
 	asserta(have('phillippy quiz')),
 	asserta(location('gibberish','phillippy quiz')),
 	retract(phillippy_count(0)),
@@ -453,14 +482,23 @@ dialog(Character):-
 	Character = 'man behind cars',
 	car_count(4),
 	retract(location('man behind cars',_)),
-	asserta(has_vote('man behind cars')),
+	has_vote(Character),
 	asserta(location('man behind cars''s vote','voter sheet')),
 	respond(['Alright, I''ll vote for you! Just leave me alone!']).
 dialog(Character):-
 	Character = 'p safety officer',
+	sketch_count(1),
+	has_vote(Character),
+	asserta(location('p safety officer''s vote','voter sheet')),
+	respond(['(You tell him about someone sketchy in lottie) ',
+		'Alright, Drumpf! Thanks for letting me know. Anyone who is ',
+		'as conscientious and responsible as you must be a good candidate! ',
+		'You have my vote']).
+dialog(Character):-
+	Character = 'p safety officer',
 	car_count(X),
 	X =\= 0,
-	asserta(has_vote('p safety officer')),
+	has_vote(Character),
 	asserta(location('p safety officer''s vote','voter sheet')),
 	respond(['(You tell him about the man behind the cars in d lot) ',
 		'Alright, Drumpf! Thanks for letting me know. Anyone who is ',
@@ -473,7 +511,7 @@ dialog(Character):-
 dialog(Character):-
 	Character = 'dr miller',
 	location('brady miller','dr miller'),
-	asserta(has_vote('dr miller')),
+	has_vote(Character),
 	asserta(location('dr miller''s vote','voter sheet')),
 	respond(['You''ve returned my son to me! Thank you so much! ',
 		'You have my vote, Drumpf']).
@@ -491,20 +529,78 @@ dialog(Character):-
 dialog(Character):-
 	Character = 'athlete',
 	location('small loan of a million dollars', 'athlete'),
-	asserta(has_vote('athlete')),
+	has_vote(Character),
 	asserta(location('athlete''s vote', 'voter sheet')),
 	respond(['Oh, ok this will be just enough for me to vote for you.']),
 	respond(['(You are pleased to have made such a smart business decision)']).
 dialog(Character):-
 	Character = 'athlete',
 	respond(['It would take, like, a million dollars for me to vote for you! Hahahaha']).	
-
+dialog(Character):-
+	Character = 'business student',
+	location('construction plans','business student'),
+	has_vote(Character),
+	asserta(location('business student''s vote','voter sheet')),
+	respond(['Wow, I just looked through this, and it looks like the best money ',
+		'making scheme ever! Thanks, Drumpf!']).
+dialog(Character):-
+	Character = 'business student',
+	respond(['I''m looking for new business propositions! If you can find me some way ',
+		'to make a lot of money without doing much work, I''ll vote for you! I hope ',
+		'you can find a way. People seem to think you know what you''re doing, but I''m not so sure ',
+		'You''re legacy mostly consists of making lower than average business decisions ',
+		' but getting lucky in the long run, right? I mean, that time you started a mortgage ',
+		'company six months before the housing bubble collapse is a classic. Anyway, let me know ',
+		'if you find any ideas! (By ideas, I mean someone else''s idea. Even as a college ',
+		'business major just starting out, I know enough to not trust yours.)']).
+dialog(Character):-
+	Character = 'campus nurse',
+	location('forged psychological health verification','campus nurse'),
+	has_vote(Character),
+	asserta(location('campus nurse''s vote','voter sheet')),
+	respond(['Well, despite my initial concern, everything appears to check out. I suppose ',
+		'I''ll vote for you, then']).
+dialog(Character):-
+	Character = 'campus nurse',
+	nurse_count(1),
+	respond(['I need you to give me verification that you''re not crazy']).
+dialog(Character):-
+	Character = 'campus nurse',
+	retract(nurse_count(0)),
+	asserta(nurse_count(1)),
+	respond(['My word, Drumpf! With the things you''ve been saying, I seriously doubt you ',
+		'are of sound mind. I refuse to vote for you until you can verify your ',
+		'psychological health!']).
+dialog(Character):-
+	Character = 'someone sketchy',
+	nurse_count(1),
+	has_vote(Character),
+	asserta(location('someone sketchy''s vote','voter sheet')),
+	asserta(have('forged psychological health verification')),
+	respond(['(You ask him for psychological health verification)']),
+	respond(['Alright, I can do that. I promise to vote. Here you go. (He slips you ',
+		'a piece of paper)']).
+dialog(Character):-
+	Character = 'someone sketchy',
+	sketch_count(1),
+	respond(['Let me know what you need, man']).
+dialog(Character):-
+	Character = 'someone sketchy',
+	retract(sketch_count(0)),
+	asserta(sketch_count(1)),
+	respond(['Hey man. I can get you whatever you need. Just let me know what it is. ',
+		'There might even be a vote in it for you if you spread the word to those ',
+		'who can be discrete, if you know what I mean. Talk to me again if you need ',
+		'anything']).
 
 % take allows the player to take something.  As long as the thing is
 % contained in the room it can be taken, even if the adventurer hasn't
 % looked in the the container which contains it.  Also the thing
 % must not be furniture.
 
+take('marginally ok food'):-
+	asserta(have('marginally ok food')),
+	respond(['You know have the marginally ok food']).
 take('brady miller'):-
 	is_here('brady miller'),
 	move('brady miller',have),
@@ -584,7 +680,11 @@ eat(Thing):-
   eat2(Thing).
 eat(Thing):-
   respond(['You don''t have the ',Thing]).
-  
+
+eat2(Food):-
+	Food = 'marginally ok food',
+	retract(have(Food)),
+	respond(['That ',Food,' was marginally ok']).
 eat2(Thing):-
   edible(Thing),
   retract(have(Thing)),
@@ -824,6 +924,9 @@ noun(thing,'blue car') --> [blue,car].
 noun(thing,'silver car') --> [silver,car].
 noun(thing,'lots of other cars') --> [lots,of,other,cars].
 noun(thing,'construction plans') --> [construction,plans].
+noun(thing,'marginally ok food') --> [marginally,ok,food].
+noun(thing,'forged psychological health verification') --> [forged,psychological,health,verification].
+
 
 noun(person,P) --> [P], {character(P)}.
 noun(person,'dr rohrbaugh') --> [dr,rohrbaugh].
@@ -836,15 +939,9 @@ noun(person,'p safety officer') --> [p,safety,officer].
 noun(person,'man behind cars') --> [man,behind,cars].
 noun(person,'jake and julie') --> [jake,and,julie].
 noun(person,'athlete') --> [athlete].
-
-% If the player has just typed light, it can be interpreted three ways.
-% If a room name is before it, it must be a room light.  If the
-% player has the flash light, assume it means the flash light.  Otherwise
-% assume it is the room light.
-
-noun(thing,light) --> [X,light], {place(X)}.
-noun(thing,flashlight) --> [light], {have(flashlight)}.
-noun(thing,light) --> [light].
+noun(person,'someone sketchy') --> [someone,sketchy].
+noun(person,'campus nurse') --> [campus,nurse].
+noun(person,'business student') --> [business,student].
 
 % readlist - read a list of words, based on a Clocksin & Mellish
 % example.
