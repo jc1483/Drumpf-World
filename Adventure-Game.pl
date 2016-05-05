@@ -35,7 +35,7 @@ drumpf_world:-
   look,                   % give a look before starting the game
   command_loop.
 
-% command_loop - repeats until either the nani is found or the
+% command_loop - repeats until either the you collect all the votes or the
 %     player types quit
 
 command_loop:-
@@ -71,9 +71,11 @@ do(get_In(X)):-get_In(X),!.
 do(quit):-quit,!.
 
 % These are the predicates which control exit from the game.  If
-% the player has taken the nani, then the call to "(nani)" will
-% succeed and the command_loop will complete.  Otherwise it fails
-% and command_loop will repeat.
+% the player has all the votes, the CCC book, and has given the hobo
+% the milkshake then the call to "(havevotesccc)" will
+% succeed and the command_loop will complete.  Then it will check
+% if you just have all the votes. Otherwise the command loop
+% will repeat.
 
 havevotesccc:-
   checked_votes(X),        
@@ -142,7 +144,7 @@ hint:-
   nl,
   look.
 
-% Initial facts describing the world.  Rooms and doors do not change,
+% Initial facts describing the world.  Places and paths do not change,
 % so they are compiled.
 
 place(union).
@@ -194,7 +196,7 @@ connect(X,Y):-
 
 % These facts are all subject to change during the game, so rather
 % than being compiled, they are "asserted" to the listener at
-% run time.  This predicate is called when "nanisrch" starts up.
+% run time.  This predicate is called when the game starts up.
 
 init_dynamic_facts:-
   assertz(location('milkshake machine',union)),
@@ -275,7 +277,7 @@ character('someone sketchy').
 
 %%%%%%%% COMMANDS %%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% goto moves the player from room to room.
+% goto moves the player from place to place.
 
 goto(Place):-
   can_go(Place),                 % check for legal move
@@ -290,10 +292,10 @@ can_go(Place):-
   respond(['You can''t get to ',Place,' from here']),fail.
 
 moveto(Place):-                  % update the logicbase with the
-  retract(here(_)),             % new room
+  retract(here(_)),             % new place
   asserta(here(Place)).
 
-% look lists the things in a room, and the connections
+% look lists the things in a place, and the connections
 
 look:-
   here(Here),
@@ -625,9 +627,9 @@ dialog(Character):-
 		'anything']).
 
 % take allows the player to take something.  As long as the thing is
-% contained in the room it can be taken, even if the adventurer hasn't
+% contained in the place it can be taken, even if the adventurer hasn't
 % looked in the the container which contains it.  Also the thing
-% must not be furniture.
+% must be takeable, not too big and not a person.
 
 take('marginally ok food'):-
 	asserta(have('marginally ok food')),
@@ -679,7 +681,7 @@ move(Thing,have):-
   retract(location(Thing,_)),      % take it from its old place
   asserta(have(Thing)).            % and add to your possessions
 
-% drop - allows the player to transfer a possession to a room
+% drop - allows the player to transfer a possession to a place
 
 drop(Thing):-
   have(Thing),                     % you must have the thing to drop it
@@ -690,7 +692,7 @@ drop(Thing):-
 drop(Thing):-
   respond(['You don''t have the ',Thing]).
 
-% give - allows the player to give an item to the character in the room
+% give - allows the player to give an item to the character in the place
 give('milkshake'):-
 	have('milkshake'),
 	is_present('hobo'),
@@ -835,9 +837,9 @@ get_command(_):-
   respond(['I don''t understand, try again or type help']),fail.
 
 % The grammar doesn't have to be real English.  There are two
-% types of commands in Nani Search, those with and without a 
+% types of commands in the game, those with and without a 
 % single argument.  A special case is also made for the command
-% goto which can be activated by simply giving a room name.
+% goto which can be activated by simply giving a place name.
 
 command([Pred,Arg]) --> verb(Type,Pred),nounphrase(Type,Arg).
 command([Pred]) --> verb(intran,Pred).
@@ -845,7 +847,7 @@ command([goto,Arg]) --> noun(go_place,Arg).
 
 % Recognize three types of verbs.  Each verb corresponds to a command,
 % but there are many synonyms allowed.  For example the command
-% turn_on will be triggered by either "turn on" or "switch on".
+% look_in will be triggered by "look in", "look at" and several others.
 
 verb(go_place,goto) --> go_verb.
 verb(person,V) --> tran_verb(V).
@@ -916,7 +918,7 @@ det --> [the].
 det --> [a].
 
 % Nouns are defined as rooms, or things located somewhere.  We define
-% special cases for those things represented in Nani Search by two
+% special cases for those things represented in the game by two
 % words.  We can't expect the user to type the name in quotes.
 
 noun(go_place,R) --> [R], {place(R)}.
